@@ -1,0 +1,56 @@
+<html>
+
+<body>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/recorderjs/0.1.0/recorder.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js">
+  </script>
+
+  <input onclick="startRecording()" type="button" value="start recording" />
+  <input onclick="stopRecording()" type="button" value="stop recording" />
+
+  <script>
+    var recorder;
+
+    var onFail = function(e) {
+      console.log('Rejected!', e);
+    };
+
+    var onSuccess = function(s) {
+      var context = new AudioContext();
+      console.log("sample rate " + context.sampleRate);
+      var mediaStreamSource = context.createMediaStreamSource(s);
+      recorder = new Recorder(mediaStreamSource);
+      recorder.record();
+    }
+
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+    function startRecording() {
+      if (navigator.getUserMedia) {
+        navigator.getUserMedia({
+          audio: true
+        }, onSuccess, onFail);
+      } else {
+        console.log('navigator.getUserMedia not present');
+      }
+    }
+
+    function stopRecording() {
+      recorder.stop();
+      recorder.exportWAV(function(blob_data) {
+        var formData = new FormData();
+        formData.append('audio', blob_data);
+        $.ajax({
+          type: 'POST',
+          url: 'upload',
+          data: formData,
+          contentType: false,
+          cache: false,
+          processData: false,
+        });
+      });
+    }
+  </script>
+</body>
+</html>
